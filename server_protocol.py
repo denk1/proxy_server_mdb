@@ -67,11 +67,14 @@ class ConnectionDefenition:
 
 
 class EchoServerProtocol(asyncio.Protocol):
-    index = 0
+    __index = 0
 
     def __init__(self):
-        self.connection_defenition = ConnectionDefenition(index)
-        index += 1
+        try:
+            self.connection_defenition = ConnectionDefenition(self.__class__.__index)
+            self.__class__.__index += 1
+        except:
+            print("error")
 
     def init(self):
         self.is_make_decision_server = False
@@ -89,12 +92,8 @@ class EchoServerProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         self.init()
         self.peername = transport.get_extra_info('peername')
-
         self.transport = transport
-        self.index = EchoServerProtocol.index
-        self.connections += [ConnectionDefenition(transport, self.index)]
-        EchoServerProtocol.index += 1
-        print('Connection from {0} N {1}'.format(self.peername, self.index))
+        print('Connection from {0} N {1}'.format(self.peername, self.__index))
 
     def data_received(self, data):
         message = data
@@ -127,10 +126,10 @@ class EchoServerProtocol(asyncio.Protocol):
 
        
     def connection_lost(self, exc):
-        # The socket has been closed
-        index = ConnectionDefenition.clients.index(self.connection_defenition.client_type)
-        ConnectionDefenition.clients.pop(index)
+        # The socket has been closed        
+        ConnectionDefenition.clients.pop(self.connection_defenition.client_type)
         print('The connection with {0} has been lost!'.format(direction_names_dict[self.connection_defenition.client_type]))
+        print(len(ConnectionDefenition.clients))
 
     def __eq__(self, another) -> bool:
         return self.index == another.index
@@ -144,7 +143,7 @@ loop = asyncio.new_event_loop()
 connections = []
 
 coro = loop.create_server(
-    lambda: EchoServerProtocol(connections),
+    lambda: EchoServerProtocol(),
     os.environ.get('MY_SERVICE_ADDRESS', 'localhost'),
     os.environ.get('MY_SERVICE_PORT', 15556))
 
