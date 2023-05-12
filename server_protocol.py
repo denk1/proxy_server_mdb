@@ -10,20 +10,41 @@ from enum import Enum
 class Direction(Enum):
     CAR = 1
     BMD = 2
+    MONITOR = 3
 
 
-direction_names_dict = {Direction.CAR: "Car", Direction.BMD: "BMD"}
+direction_names_dict = {Direction.CAR: "Car", Direction.BMD: "BMD", Direction.MONITOR: "MONITOR"}
 # class MarkedTransport(asyncio.selector_events._SelectorSocketTransport):
 #    def __init__(self, parent):
 #        super().__init__(parent)
 
-directionPairs = {Direction.CAR: Direction.BMD, Direction.BMD: Direction.CAR}
+directionPairs = {Direction.CAR: [Direction.BMD, Direction.MONITOR], Direction.BMD: [Direction.CAR, Direction.MONITOR]}
 
 headers_dict = {
     (0x79, 0x92): ((0x79, 0x93), (0x79, 0x94),  Direction.BMD, ((0x44, 0x48), (0x44, 0x47))),
     (0x79, 0x95): ((0x79, 0x96), (0x79, 0x97), Direction.CAR, ((0x44, 0x47), (0x44, 0x48))),
+    (0x79, 0x98): ((0x79, 0x99), (0x79, 0x100), Direction.MONITOR, ((0x44, 0x47), (0x44, 0x48))),
 }
 
+
+class MsgSender:
+    def __init__(self, transport) -> None:
+        self.loop = asyncio.new_event_loop()
+        self.transport = transport
+        
+        
+    def msg_sending(self, loop, msg):
+        self.transport.write(msg)
+        loop.stop()
+        
+    def send_data(self, data):
+        self.loop.call_soon(self.msg_sending, self.loop, data)
+        try:
+            self.loop.run_forever()
+        finally:
+            loop.close()
+        
+    
 
 class ConnectionDefenition:
     clients = dict()
@@ -118,8 +139,11 @@ class EchoServerProtocol(asyncio.Protocol):
             except Exception:
                 print('The result message has not been resent')
         elif self.connection_defenition.is_request(message):
-            ConnectionDefenition.clients[directionPairs[self.connection_defenition.client_type]].write(message)
-            
+            for clnt in directionPairs[self.connection_defenition.client_type]:
+                if clnt in ConnectionDefenition.clients.keys():
+                    client_tns = ConnectionDefenition.clients[clnt]
+                    msg_sender = MsgSender(client_tns)
+                    msg_sender.send_data(message)
         else:
             print('The recieved message has not been recognized:(')
             print(data)
