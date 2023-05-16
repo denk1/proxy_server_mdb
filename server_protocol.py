@@ -28,21 +28,24 @@ headers_dict = {
 
 
 class MsgSender:
-    def __init__(self, transport) -> None:
-        self.loop = asyncio.new_event_loop()
-        self.transport = transport
+    def __init__(self, loop) -> None:
+        self.loop = loop
         
         
-    def msg_sending(self, loop, msg):
-        self.transport.write(msg)
-        loop.stop()
+    
+    def msg_sending(self, loop, transport, msg):
+        transport.write(msg)
+        #loop.stop()
         
-    def send_data(self, data):
-        self.loop.call_soon(self.msg_sending, self.loop, data)
+    def send_data(self, transport, data):
         try:
-            self.loop.run_forever()
-        finally:
-            loop.close()
+            self.loop.call_soon(self.msg_sending, self.loop, transport, data)
+        except Exception as e:
+            print(str(e))
+        #try:
+        #    self.loop.run_forever()
+        #finally:
+        #    loop.close()
         
     
 
@@ -85,6 +88,7 @@ class ConnectionDefenition:
 
     def __eq__(self, another) -> bool:
         return self.index == another.index
+
 
 
 class EchoServerProtocol(asyncio.Protocol):
@@ -142,8 +146,8 @@ class EchoServerProtocol(asyncio.Protocol):
             for clnt in directionPairs[self.connection_defenition.client_type]:
                 if clnt in ConnectionDefenition.clients.keys():
                     client_tns = ConnectionDefenition.clients[clnt]
-                    msg_sender = MsgSender(client_tns)
-                    msg_sender.send_data(message)
+                    msg_sender.send_data(client_tns, message)
+                    #client_tns.write(message)
         else:
             print('The recieved message has not been recognized:(')
             print(data)
@@ -164,6 +168,7 @@ class EchoServerProtocol(asyncio.Protocol):
 # low-level APIs.
 
 loop = asyncio.new_event_loop()
+msg_sender = MsgSender(loop)
 connections = []
 
 coro = loop.create_server(
