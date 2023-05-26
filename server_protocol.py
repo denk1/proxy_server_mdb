@@ -6,24 +6,26 @@ from operator import index
 import os
 from enum import Enum
 
-
 class Direction(Enum):
     CAR = 1
     BMD = 2
     MONITOR = 3
+    MONITOR_SITUATION = 4 
+    
 
 
-direction_names_dict = {Direction.CAR: "Car", Direction.BMD: "BMD", Direction.MONITOR: "MONITOR"}
+direction_names_dict = {Direction.CAR: "Car", Direction.BMD: "BMD", Direction.MONITOR: "MONITOR PATH", Direction.MONITOR_SITUATION: "MONITOR"}
 # class MarkedTransport(asyncio.selector_events._SelectorSocketTransport):
 #    def __init__(self, parent):
 #        super().__init__(parent)
 
-directionPairs = {Direction.CAR: [Direction.BMD, Direction.MONITOR], Direction.BMD: [Direction.CAR, Direction.MONITOR]}
+directionPairs = {Direction.CAR: [Direction.BMD, Direction.MONITOR_SITUATION], Direction.BMD: [Direction.CAR, Direction.MONITOR]}
 
 headers_dict = {
+    (0x79, 0x90): ((0x79, 0x91), (0x79, 0x11),  Direction.MONITOR_SITUATION, ((0x44, 0x48), (0x44, 0x47))),
     (0x79, 0x92): ((0x79, 0x93), (0x79, 0x94),  Direction.BMD, ((0x44, 0x48), (0x44, 0x47))),
     (0x79, 0x95): ((0x79, 0x96), (0x79, 0x97), Direction.CAR, ((0x44, 0x47), (0x44, 0x48))),
-    (0x79, 0x98): ((0x79, 0x99), (0x79, 0x100), Direction.MONITOR, ((0x44, 0x47), (0x44, 0x48))),
+    (0x79, 0x98): ((0x79, 0x99), (0x79, 0x12), Direction.MONITOR, ((0x44, 0x47), (0x44, 0x48))),
 }
 
 
@@ -81,7 +83,10 @@ class ConnectionDefenition:
 
     def make_connected(self, data):
         self.client_type = self.rest_headers[2]
-        return data[0] == self.rest_headers[1][0] and data[1] == self.rest_headers[1][1]
+        b0 = data[0]
+        b1 = data[1]
+        #return data[0] == self.rest_headers[1][0] and data[1] == self.rest_headers[1][1]
+        return b0 == self.rest_headers[1][0] and b1 == self.rest_headers[1][1]
 
     def is_request(self, data):
         return data[0] == self.rest_headers[3][0][0] and data[1] == self.rest_headers[3][0][1]
@@ -140,8 +145,8 @@ class EchoServerProtocol(asyncio.Protocol):
                     ConnectionDefenition.clients[self.connection_defenition.client_type] = self.transport
                     print(message)
                     print('the connection has just been established')
-            except Exception:
-                print('The result message has not been resent')
+            except Exception as e:
+                print(f'The result message has not been resent {0}'.format(str(e)))
         elif self.connection_defenition.is_request(message):
             for clnt in directionPairs[self.connection_defenition.client_type]:
                 if clnt in ConnectionDefenition.clients.keys():
