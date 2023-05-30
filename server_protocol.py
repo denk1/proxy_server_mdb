@@ -7,14 +7,14 @@ import os
 from enum import Enum
 
 class Direction(Enum):
-    CAR = 1
-    BMD = 2
-    MONITOR = 3
-    MONITOR_SITUATION = 4 
+    CAR = 1 # detection.py
+    BMD = 2 # BPR_NAMI
+    MONITOR = 3 # Situation monitor PATH
+    MONITOR_SITUATION = 4 # Situation monitor OBSTACLES
     
 
 
-direction_names_dict = {Direction.CAR: "Car", Direction.BMD: "BMD", Direction.MONITOR: "MONITOR PATH", Direction.MONITOR_SITUATION: "MONITOR"}
+direction_names_dict = {Direction.CAR: "Car", Direction.BMD: "BMD", Direction.MONITOR: "MONITOR PATH", Direction.MONITOR_SITUATION: "MONITOR OBSTACLES"}
 # class MarkedTransport(asyncio.selector_events._SelectorSocketTransport):
 #    def __init__(self, parent):
 #        super().__init__(parent)
@@ -143,8 +143,7 @@ class EchoServerProtocol(asyncio.Protocol):
                 if self.connection_defenition.make_connected(message):
                     self.connection_defenition.connected = True
                     ConnectionDefenition.clients[self.connection_defenition.client_type] = self.transport
-                    print(message)
-                    print('the connection has just been established')
+                    print('the connection to {0} has just been established '.format(direction_names_dict[self.connection_defenition.client_type]))
             except Exception as e:
                 print(f'The result message has not been resent {0}'.format(str(e)))
         elif self.connection_defenition.is_request(message):
@@ -152,10 +151,11 @@ class EchoServerProtocol(asyncio.Protocol):
                 if clnt in ConnectionDefenition.clients.keys():
                     client_tns = ConnectionDefenition.clients[clnt]
                     msg_sender.send_data(client_tns, message)
+                    print(direction_names_dict[self.connection_defenition.client_type],  "->", len(message), "->", direction_names_dict[clnt]  )
                     #client_tns.write(message)
         else:
             print('The recieved message has not been recognized:(')
-            print(data)
+            print(data[0], data[1])
 
        
     def connection_lost(self, exc):
