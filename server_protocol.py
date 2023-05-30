@@ -5,6 +5,14 @@ import asyncio
 from operator import index
 import os
 from enum import Enum
+from datetime import datetime
+
+
+def get_time():
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S.%f")
+    
+    return "[" + current_time + "]"
 
 class Direction(Enum):
     CAR = 1 # detection.py
@@ -14,7 +22,7 @@ class Direction(Enum):
     
 
 
-direction_names_dict = {Direction.CAR: "Car", Direction.BMD: "BMD", Direction.MONITOR: "MONITOR PATH", Direction.MONITOR_SITUATION: "MONITOR OBSTACLES"}
+direction_names_dict = {Direction.CAR: "Car", Direction.BMD: "BPR_NAMI", Direction.MONITOR: "MONITOR PATH", Direction.MONITOR_SITUATION: "MONITOR OBSTACLES"}
 # class MarkedTransport(asyncio.selector_events._SelectorSocketTransport):
 #    def __init__(self, parent):
 #        super().__init__(parent)
@@ -151,7 +159,7 @@ class EchoServerProtocol(asyncio.Protocol):
                 if clnt in ConnectionDefenition.clients.keys():
                     client_tns = ConnectionDefenition.clients[clnt]
                     msg_sender.send_data(client_tns, message)
-                    print(direction_names_dict[self.connection_defenition.client_type],  "->", len(message), "->", direction_names_dict[clnt]  )
+                    print(get_time(), direction_names_dict[self.connection_defenition.client_type],  "->", len(message), "->", direction_names_dict[clnt]  )
                     #client_tns.write(message)
         else:
             print('The recieved message has not been recognized:(')
